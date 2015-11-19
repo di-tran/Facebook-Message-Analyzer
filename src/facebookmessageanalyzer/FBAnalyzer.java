@@ -4,10 +4,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -79,16 +81,6 @@ public class FBAnalyzer implements Serializable {
     }
     
     /**
-     * This method has not yet been implemented; intended function: generates a
-     * file containing a report of some statistics collected from the Facebook
-     * messages.
-     * @return the generated file.
-     */
-    public File generateReport() {
-        return null;
-    }
-    
-    /**
      * Retrieves a thread based on its position in the list.
      * 
      * @param index the index of the desired t
@@ -99,19 +91,29 @@ public class FBAnalyzer implements Serializable {
     }
     
     /**
-     * This method is not working and needs to be debugged; intended function: 
-     * loads data from a serialized instance of FBAnalyzer.
+     * Deserializes a file and returns the FBAnalyzer object from a file.
      * 
+     * @param fileName the name of the file to be loaded.
      * @return the saved FBAnalyzer object.
      */
-    public static FBAnalyzer load() {
+    public static FBAnalyzer load(String fileName) throws FileNotFoundException {
+        String name = fileName;
+        
+        // sets to default name if none is provided.
+        if (fileName == null)
+            name = "saveFile.ser";
+        
+        // checks if the specified file exists.
+        File varTmpDir = new File(fileName);
+        if (!varTmpDir.exists())
+            throw new FileNotFoundException();
+        
+        // read in the file
         try {
-            InputStream file = new FileInputStream("saveFile.ser");
+            InputStream file = new FileInputStream(name);
             InputStream buffer = new BufferedInputStream(file);
             ObjectInput input = new ObjectInputStream (buffer);
-            
             return (FBAnalyzer)input.readObject();
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -243,16 +245,23 @@ public class FBAnalyzer implements Serializable {
     }
     
     /**
-     * Warning: this method does not work with its sister function, load(); 
-     * intended function: saves this instance as a file for faster loading.
-     * File is saved with the name "saveFile.ser"
+     * Saves the current analyzer into a file in the same directory as the 
+     * source. If no filename is specified, the default filename 
+     * "saveFile.ser" is chosen. If the provided filename is the same as a file 
+     * in the directory, that file will be overwritten. Otherwise, a new file 
+     * is created using the given filename.
+     * 
+     * @param fileName the name of the file to save to.
      */
-    public void save() {
+    public void save(String fileName) {
+        String name = fileName;
+        if (fileName == null)
+            name = "saveFile.ser";
         try {
-            FileOutputStream fos = new FileOutputStream("saveFile.ser");
-            OutputStream buffer = new BufferedOutputStream(fos);
-            ObjectOutputStream oos = new ObjectOutputStream(buffer);
+            FileOutputStream fos = new FileOutputStream(fileName);
+            ObjectOutput oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
+            oos.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -309,9 +318,9 @@ public class FBAnalyzer implements Serializable {
         try {
             File inputFile = new File("messages.htm");
             
-            FBAnalyzer analyzer = new FBAnalyzer(inputFile);
+            FBAnalyzer analyzer = FBAnalyzer.load("testSave.ser");
             
-            analyzer.mostCommonWord();
+            System.out.println(analyzer.numberOfThreads());
             
         } catch(Exception e) {
             System.err.println("Error occurred: " + e);
